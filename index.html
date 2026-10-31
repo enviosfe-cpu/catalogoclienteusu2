@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Catálogo | Distribuciones Castro</title>
+
+  <!-- PWA Manifest & Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B1B3A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./logo.png">
+
+  <!-- Iconos y estilos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css?v=1.9">
+</head>
+<body>
+
+  <header class="cc-header">
+    <div class="cc-header-inner">
+      <img id="cc-logo" src="./logo.png" alt="Logo" class="cc-logo">
+      <div class="cc-brand">
+        <div id="cc-company" class="cc-company">Distribuciones Castro</div>
+        <p id="cc-seller" class="cc-seller"></p>
+      </div>
+
+      <!-- Actualización manual (no fuerza descarga al abrir) -->
+      <button id="btn-refresh-catalog" onclick="refreshCatalogManually()" title="Actualizar catálogo si hay internet" aria-label="Actualizar catálogo" class="cc-icon-btn">
+        <i id="icon-refresh" class="fa-solid fa-arrows-rotate"></i>
+      </button>
+
+      <button onclick="toggleCart(true)" aria-label="Abrir consulta" class="cc-cart-btn">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span id="cart-count" class="cc-cart-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Alerta / Cuadrito de actualización de catálogo -->
+  <div id="cc-sync-toast" class="hidden cc-sync-toast" role="status" aria-live="polite">
+    <div class="cc-sync-toast-card">
+      <div class="cc-sync-toast-icon">
+        <i id="cc-sync-icon" class="fa-solid fa-arrows-rotate fa-spin"></i>
+      </div>
+      <div class="cc-sync-toast-text">
+        <b id="cc-sync-title">Estamos actualizando</b>
+        <p id="cc-sync-msg">Espera un momento, estamos guardando el catálogo…</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="cc-main">
+
+    <!-- Hero editorial -->
+    <section class="cc-hero" id="cc-hero">
+      <div class="cc-hero-copy">
+        <span class="cc-eyebrow">Catálogo privado</span>
+        <h1>Tu negocio,<br><em>bien surtido.</em></h1>
+        <p>Una selección pensada para tu mesa y tu clientela. Consulta y recibe asesoría directa.</p>
+        <div id="cc-headline" class="cc-hero-headline"></div>
+        <div class="cc-hero-actions">
+          <a class="cc-btn-cream" href="#cc-grid-section">
+            Explorar catálogo
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="cc-hero-stage" id="cc-hero-stage">
+        <div class="cc-hero-frame cc-hero-frame-1" id="cc-hero-frame-1"><img id="cc-hero-img-1" alt=""></div>
+        <div class="cc-hero-frame cc-hero-frame-2" id="cc-hero-frame-2"><img id="cc-hero-img-2" alt=""></div>
+        <div class="cc-hero-frame cc-hero-frame-3" id="cc-hero-frame-3"><img id="cc-hero-img-3" alt=""></div>
+        <button id="cc-hero-offer" class="cc-seal hidden" onclick="openOffer()" aria-label="Ver oferta">
+          <span>OFERTA</span><b>DEL MES</b>
+        </button>
+      </div>
+    </section>
+
+    <!-- Buscador flotante -->
+    <div class="cc-search-wrap">
+      <div class="cc-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cc-search" oninput="renderGrid()" placeholder="Buscar por nombre, código o barras…" autocomplete="off" aria-label="Buscar producto">
+        <button id="cc-search-clear" type="button" onclick="clearClientSearch()" class="hidden cc-search-clear" aria-label="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <button id="cc-search-scan" type="button" onclick="openBarcodeScanner()" class="cc-search-scan" aria-label="Escanear código de barras con la cámara" title="Escanear código con la cámara">
+          <i class="fa-solid fa-barcode"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtro interactivo por categoría -->
+    <div class="cc-categories-bar" id="cc-categories-bar">
+      <div class="cc-categories-track" id="cc-categories-nav"></div>
+    </div>
+
+    <!-- Catálogo -->
+    <section class="cc-catalog" id="cc-grid-section">
+      <div class="cc-section-head">
+        <div>
+          <span class="cc-eyebrow cc-eyebrow-dark">Curado para ti</span>
+          <h2>Selección de la semana</h2>
+        </div>
+        <span id="cc-grid-count" class="cc-count">0 productos</span>
+      </div>
+
+      <div id="cc-loading" class="hidden cc-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Cargando catálogo...</p>
+      </div>
+
+      <div id="cc-empty" class="hidden cc-empty">
+        <div class="cc-empty-icon"><i class="fa-solid fa-box-open"></i></div>
+        <h3>Sin productos</h3>
+        <p id="cc-empty-msg">Aún no hay productos publicados.</p>
+      </div>
+
+      <div id="cc-grid" class="cc-catalog-flow"></div>
+    </section>
+  </main>
+
+  <!-- Barra de consulta fija (móvil) -->
+  <div class="cc-bottombar" id="cc-bottombar">
+    <div class="cc-bottombar-inner">
+      <div class="cc-bottombar-bag">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <b id="cc-bottombar-count">0</b>
+      </div>
+      <div class="cc-bottombar-copy">
+        <span>Tu consulta</span>
+        <b id="cc-bottombar-label">0 productos</b>
+      </div>
+      <button class="cc-bottombar-btn" onclick="toggleCart(true)" aria-label="Ver consulta">
+        Ver <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Offer Modal -->
+  <div id="cc-offer" onclick="if(event.target===this)closeOffer()" class="hidden cc-modal cc-offer-modal">
+    <div class="cc-offer-card">
+      <button onclick="closeOffer()" aria-label="Cerrar oferta" class="cc-modal-close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div id="cc-offer-stage" class="cc-offer-stage">
+        <img id="cc-offer-image" src="" alt="Oferta especial">
+        <button id="cc-offer-prev" onclick="moveOffer(-1)" aria-label="Anterior" class="hidden cc-offer-nav cc-offer-prev">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button id="cc-offer-next" onclick="moveOffer(1)" aria-label="Siguiente" class="hidden cc-offer-nav cc-offer-next">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div id="cc-offer-counter" class="hidden cc-offer-counter">1 / 1</div>
+        <div id="cc-offer-dots" class="cc-offer-dots"></div>
+      </div>
+
+      <div class="cc-offer-body">
+        <span class="cc-eyebrow cc-eyebrow-dark">Promoción</span>
+        <h3 id="cc-offer-title">Oferta especial</h3>
+        <button id="cc-offer-cta" onclick="closeOffer();document.getElementById('cc-grid-section').scrollIntoView({behavior:'smooth'})" class="cc-btn-primary">Ver productos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div id="cc-cart" onclick="if(event.target===this)toggleCart(false)" class="hidden cc-modal cc-cart-modal">
+    <div class="cc-cart-card">
+      <div class="cc-cart-head">
+        <div>
+          <span class="cc-eyebrow">Tu consulta</span>
+          <h3>Productos seleccionados</h3>
+          <p id="cc-cart-count">0 productos</p>
+        </div>
+        <button onclick="toggleCart(false)" aria-label="Cerrar consulta" class="cc-cart-close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="cc-cart-items" class="cc-cart-items"></div>
+
+      <div class="cc-cart-foot">
+        <button onclick="sendOrder()" class="cc-wa-btn">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span id="cc-send-label">Enviar por WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Escáner de Código de Barras -->
+  <div id="cc-scanner-modal" class="hidden cc-modal cc-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="cc-scanner-title">
+    <div class="cc-scanner-card">
+      <div class="cc-scanner-head">
+        <div class="cc-scanner-title-box">
+          <i class="fa-solid fa-barcode"></i>
+          <div>
+            <h3 id="cc-scanner-title">Escanear código de barras</h3>
+            <p>Apunta la cámara al código de barra o QR</p>
+          </div>
+        </div>
+        <div class="cc-scanner-actions">
+          <button type="button" id="cc-scanner-torch" onclick="toggleScannerTorch()" class="hidden cc-scanner-btn" aria-label="Linterna" title="Encender linterna">
+            <i class="fa-solid fa-bolt"></i>
+          </button>
+          <button type="button" id="cc-scanner-switch" onclick="switchScannerCamera()" class="hidden cc-scanner-btn" aria-label="Cambiar cámara" title="Cambiar cámara">
+            <i class="fa-solid fa-camera-rotate"></i>
+          </button>
+          <button type="button" onclick="closeBarcodeScanner()" class="cc-scanner-btn cc-scanner-btn-close" aria-label="Cerrar escáner">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="cc-scanner-stage">
+        <div id="cc-scanner-viewport" class="cc-scanner-viewport"></div>
+        <div class="cc-scanner-guide" aria-hidden="true">
+          <div class="cc-scanner-laser"></div>
+          <span class="cc-scanner-corner cc-corner-tl"></span>
+          <span class="cc-scanner-corner cc-corner-tr"></span>
+          <span class="cc-scanner-corner cc-corner-bl"></span>
+          <span class="cc-scanner-corner cc-corner-br"></span>
+        </div>
+      </div>
+
+      <div class="cc-scanner-foot">
+        <p id="cc-scanner-status" class="cc-scanner-status">Buscando código de barra...</p>
+        <button type="button" onclick="closeBarcodeScanner()" class="cc-scanner-cancel-btn">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración y lógica de la aplicación -->
+  <script src="config.js"></script>
+  <script src="html5-qrcode.min.js"></script>
+  <script src="app.js?v=1.9"></script>
+</body>
+</html>
